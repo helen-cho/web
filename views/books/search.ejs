@@ -1,5 +1,7 @@
 <style>
-    #div_books img {cursor: pointer;}
+    #div_books img {
+        cursor: pointer;
+    }
 </style>
 <div class="row my-5">
     <div class="col">
@@ -21,13 +23,13 @@
         </div>
     </div>
 </div>
-<script type="x-handlebars-templte" id="temp_books">
+<script type="x-handlebars-template" id="temp_books">
     <table class="table">
         {{#each documents}}
         <tr>
-            <td><img src="{{thumbnail thumbnail}}" index="{{@index}}" width="50"></td>
+            <td><img src="{{chk_thumbnail thumbnail}}" index="{{@index}}" width="50"></td>
             <td>{{title}}</td>
-            <td>{{price price}}</td>
+            <td>{{fmt_price price}}</td>
             <td>{{authors}}</td>
         </tr>
         <%-include("modal.ejs")%>    
@@ -35,7 +37,7 @@
     </table>
 </script>
 <script>
-    Handlebars.registerHelper("thumbnail", function(thumbnail){
+    Handlebars.registerHelper("chk_thumbnail", function(thumbnail){
         if(!thumbnail) {
             return "http://via.placeholder.com/120x150";
         }else {
@@ -43,7 +45,7 @@
         }
     });
 
-    Handlebars.registerHelper("price", function(price){
+    Handlebars.registerHelper("fmt_price", function(price){
         if(price) return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '원';
     });
 </script>
@@ -87,10 +89,8 @@
             data:{ query:query, page:page, size:5 },
             dataType:'json',
             success:function(data){
-                console.log(data);
                 temp=Handlebars.compile($("#temp_books").html());
                 $("#div_books").html(temp(data));
-                $("#span_page").html(page);
                 if(page==1) {
                     $("#prev").attr("disabled", true)
                 }else {

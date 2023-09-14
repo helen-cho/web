@@ -1,0 +1,72 @@
+<style>
+    span {
+        width:150px;
+    }
+</style>
+<div class="row my-5 justify-content-center">
+    <div class="col-md-8 col-lg-6">
+        <h1 class="text-center">정보수정</h1>
+        <div class="card p-3">
+            <form name="frm">
+                <div class="input-group mb-3 text-center">
+                    <span class="input-group-text">아이디</span>
+                    <input name="uid" class="form-control">
+                </div>
+                <div class="input-group mb-3">
+                    <span class="input-group-text">비밀번호</span>
+                    <input name="upass" type="password" class="form-control">
+                </div>
+                <div class="input-group mb-3">
+                    <span class="input-group-text">이름</span>
+                    <input name="uname" class="form-control">
+                </div>
+                <div class="text-center">
+                    <button class="btn btn-primary px-5">회원등록</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+    $(frm).on("submit", function(e){
+        e.preventDefault();
+        let uid=$(frm.uid).val();
+        let upass=$(frm.upass).val();
+        let uname=$(frm.uname).val();
+        if(uid == "") {
+            alert("아이디를 입력하세요!");
+            $(frm.uid).focus();
+            return;
+        }else if(upass == "") {
+            alert("비밀번호를 입력하세요!");
+            $(frm.upass).focus();
+            return;
+        }else if(uname == "") {
+            alert("이름을 입력하세요!");
+            $(frm.uname).focus();
+            return;
+        }
+        if(!confirm("회원을 등록하실래요?")) return;
+
+        $.ajax({
+            type:"post",
+            url:"/login",
+            data:{uid:uid, upass:upass},
+            success:function(data){
+                if(data.result !=0 ){
+                    alert("이미 사용중인 아이디입니다!");
+                }else{
+                    $.ajax({
+                        type:"post",
+                        url:"/users/insert",
+                        data:{uid:uid, upass:upass, uname:uname},
+                        success:function() {
+                            alert("회원이 등록되었습니다.")
+                            location.href="/login";
+                        }
+                    });
+                }
+            }
+        });
+    });
+</script>

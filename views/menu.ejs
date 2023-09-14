@@ -11,10 +11,32 @@
           </li>
         </ul>
         <ul class="navbar-nav d-flex">
-            <li class="nav-item">
-              <a class="nav-link active" aria-current="page" href="#">LOGIN</a>
+            <li class="nav-item" id="login">
+              <a class="nav-link active" aria-current="page" href="/login">LOGIN</a>
+            </li>
+            <li class="nav-item" id="uid" style="display:none;">
+              <a class="nav-link" aria-current="page" href="#">uid</a>
+            </li>
+            <li class="nav-item" id="logout" style="display:none;">
+              <a class="nav-link active" aria-current="page" href="#">LOGOUT</a>
             </li>
           </ul>
       </div>
     </div>
 </nav>
+<script>
+    let uid=sessionStorage.getItem("uid")
+    if(uid) {
+        $("#login, #uid, #logout").toggle();
+        $("#uid a").html(uid + "님");
+    }
+
+    $("#logout").on("click", function(){
+        sessionStorage.clear();
+        location.href="/";
+    })
+
+    $("#uid").on("click", function(){
+        location.href="/users/read?uid=" + uid;
+    });
+</script>
