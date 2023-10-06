@@ -1,0 +1,64 @@
+<div class="row my-5">
+    <div class="col">
+        <h1 class="text-center mb-5">장바구니</h1>
+        <div id="div_cart"></div>
+    </div>
+</div>
+<!--장바구니 템플릿-->
+<script id="temp_cart" type="text/x-handlebars-template">
+    <table class="table table-striped">
+    {{#each .}}
+        <tr>
+            <td>{{title}}</td>
+            <td>{{authors}}</td>
+            <td>{{price}}</td>
+            <td><button class="btn btn-danger btn-sm" isbn="{{ isbn }}">삭제</button></td>
+            <td><button class="btn btn-success btn-sm" index="{{@index}}">보기</button></td>
+        </tr>
+        <%-include("modal.ejs")%>    
+    {{/each}}
+    </table>
+</script>
+<script>
+    Handlebars.registerHelper("chk_thumbnail", function(thumbnail){
+        if(!thumbnail) {
+            return "http://via.placeholder.com/120x150";
+        }else {
+            return thumbnail;
+        }
+    });
+    Handlebars.registerHelper("fmt_price", function(price){
+        if(price) return price.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',') + '원';
+    });
+</script>
+<script type="module">
+    import { app } from "/javascripts/firebaseInit.js";
+    import { getDatabase, ref, onValue, remove } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-database.js";
+    const db = getDatabase(app);
+    const uid=sessionStorage.getItem('uid');
+
+    //장바구니 목록
+    onValue(ref(db, `cart/${uid}`), snapshot=>{
+        let rows=[];
+        snapshot.forEach(row=>{
+            rows.push({ key:row.key, ...row.val() });
+        });
+        //console.log(rows);
+        let temp=Handlebars.compile($("#temp_cart").html());
+        $("#div_cart").html(temp(rows));
+    });
+
+    //장바구니 삭제
+    $("#div_cart").on("click", ".btn-danger", async function(){
+        let isbn=$(this).attr("isbn");
+        if(confirm(isbn + ' 삭제하실래요?')){
+            await remove(ref(db, `cart/${uid}/${isbn}`));
+        }
+    });
+
+    $("#div_cart").on("click", ".btn-success", function(){
+        let index=$(this).attr("index")
+        $("#modal" + index).modal("show");
+    });
+
+</script>
