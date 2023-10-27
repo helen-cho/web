@@ -8,6 +8,12 @@ router.get('/login', function(req, res, next) {
 
 //회원가입 페이지
 router.get('/join', function(req, res, next) {
-    res.render('index', { title: '회원가입', pageName:'users/join.ejs' });
-  });
+  res.render('index', { title: '회원가입', pageName:'users/join.ejs' });
+});
+
+//마이 페이지
+router.get('/mypage', function(req, res){
+  res.render('index', {title:'마이페이지', pageName:'users/mypage.ejs'});
+});
+
 module.exports = router;

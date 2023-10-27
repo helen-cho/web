@@ -1,0 +1,103 @@
+<div class="my-5 mx-3 row justify-content-center">
+    <h1 class="text-center mb-5">마이페이지</h1>
+    <div class="col-md-6 p-3">
+        <div class="text-center">
+            <img id="photo" src="http://via.placeholder.com/100x100" width="50%" style="cursor: pointer;">   
+            <input id="file" type="file" style="display: none;">
+            <button id="btn-image" class="btn btn-primary w-50">이미지저장</button>
+        </div>
+        <form name="frm" class="col mt-3 align-self-center">
+            <div class="input-group mb-2">
+                <span class="input-group-text">이름</span>
+                <input name="name" class="form-control">
+            </div>
+            <div class="input-group mb-2">
+                <span class="input-group-text">전화</span>
+                <input name="phone" class="form-control">
+            </div>
+            <div class="input-group mb-2">
+                <span class="input-group-text">주소</span>
+                <input name="address" class="form-control">
+                <buttn id="btn-search" class="btn btn-primary">검색</buttn>
+            </div>
+            <div class="text-center my-3">
+                <button class="btn btn-primary btn-sm">정보수정</button>
+                <button class="btn btn-secondary btn-sm" type="reset">수정취소</button>
+            </div>
+        </form>
+    </div>
+</div>
+<script type="module">
+    import { app } from "/javascripts/firebaseInit.js";
+    import { getFirestore, setDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    import { getStorage,uploadBytes,ref,getDownloadURL } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-storage.js";
+    const db = getFirestore(app);
+    const storage=getStorage(app);
+    const uid=sessionStorage.getItem("uid");
+    const email=sessionStorage.getItem("email");
+    
+    let user;
+    const snapshot=await getDoc(doc(db, `users/${uid}`));
+    if(snapshot.data()){
+        user=snapshot.data();
+        $(frm.name).val(user.name);
+        $(frm.phone).val(user.phone);
+        $(frm.address).val(user.address);
+        $("#photo").attr("src", user.photo);
+    }else{
+        await setDoc(doc(db, `users/${uid}`),{
+            uid:uid, 
+            email:email, 
+            name:'', 
+            phone:'',
+            address:'',
+            photo:'http://via.placeholder.com/100x100'
+        });
+    }
+    
+    $("#photo").on("click", function(){
+        $("#file").click();
+    });
+
+    $("#file").on("change", function(e){
+        $("#photo").attr("src", URL.createObjectURL(e.target.files[0]));
+    });
+
+    $("#btn-search").on("click", function(){
+        new daum.Postcode({
+            oncomplete: function(data){
+                if(data.buildingName!=""){
+                    $(frm.address).val(data.address + " " + data.buildingName); 
+                }else{
+                    $(frm.address).val(data.address); 
+                }
+            }
+        }).open(); 
+    });
+
+    $("#btn-image").on("click", async function(){
+        if(!$("#file").val()){
+            alert("변경할 이미지를 선택하세요!");
+        }else{
+            if(confirm("이미지를 저장하실래요?")) {
+                const snapshot=await uploadBytes(ref(storage, `/photo/${Date.now()}.jpg`), $("#file")[0].files[0]);
+                const url=await getDownloadURL(snapshot.ref);
+                await setDoc(doc(db, `users/${uid}`), {...user, photo:url});
+                alert("이미지가 변경되었습니다!");
+            }
+        }
+    });
+
+    $(frm).on("submit", async function(e){
+        e.preventDefault();
+        if(confirm("사용자 정보를 수정하실래요?")){
+            await setDoc(doc(db, `users/${uid}`),{
+                ...user,
+                name:$(frm.name).val(), 
+                phone:$(frm.phone).val(),
+                address:$(frm.address).val()
+            });
+            location.href="/";
+        }
+    });
+</script>
