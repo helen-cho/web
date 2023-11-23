@@ -1,0 +1,139 @@
+<style>
+    .hidden {
+        display:none;
+    }
+</style>
+<div class="my-5">
+    <div id="btn-write">
+        <button class="btn btn-primary w-100">댓글작성</button>
+    </div>
+    <div id="div_write" style="display:none">
+        <textarea id="text" class="form-control" rows="5" placeholder="내용을 입력하세요."></textarea>
+        <div class="text-end mt-2">
+            <button id="btn-insert" class="btn btn-primary px-5">등록</button>
+        </div>
+    </div>
+    <div id="div_comments" class="mt-5"></div>
+</div>
+<script id="temp_comments" type="x-handlebars-templates">
+    {{#each .}}
+        <div index="{{@index}}">
+            <small>{{date}} ({{email}})</small>
+            <div class="view{{@index}}">
+                <div class="ellipsis2 comment">{{text}}</div>
+                <div class="text-end {{btn-edit email}} mt-2">
+                    <button class="btn-update btn btn-success btn-sm"">수정</button>
+                    <button class="btn-delete btn btn-danger btn-sm" id="{{id}}">삭제</button>
+                </div>
+            </div>
+            <div class="edit{{@index}}" style="display:none;">
+                <textarea class="text form-control" rows="5">{{text}}</textarea>
+                <div class="text-end mt-2">
+                    <button class="btn-save btn btn-primary btn-sm" id="{{id}}">저장</button>
+                    <button class="btn-cancel btn btn-secondary btn-sm">취소</button>
+                </div>
+            </div>    
+        </div>
+        <hr>
+    {{/each}}
+</script>
+<script>
+    Handlebars.registerHelper("btn-edit", function(email){
+        if(sessionStorage.getItem("email") != email) {
+            return "hidden";
+        }
+    });
+</script>
+<script src="https://cdn.jsdelivr.net/npm/moment@2.29.4/moment.min.js"></script>
+<script type="module">
+    import { app } from "/javascripts/firebaseInit.js";
+    import { getFirestore, collection, addDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    import { query, where, onSnapshot, orderBy, getDocs} from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    import { doc, setDoc, deleteDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    const db = getFirestore(app);
+
+    const id="<%=id%>"
+
+    getComments();
+    async function getComments() {
+        const q= query(collection(db, "comments"), where("pid", "==", id), orderBy("date", "desc"));
+        const snapshot = await getDocs(q);
+        const rows=[];
+        snapshot.forEach(doc=>{
+            rows.push({...doc.data(), id:doc.id});
+        });
+        const temp=Handlebars.compile($("#temp_comments").html());
+        $("#div_comments").html(temp(rows));
+    }
+
+    if(sessionStorage.getItem("uid")){
+        $("#btn-write, #div_write").toggle();
+    }
+
+    $("#btn-write").on("click", function() {
+        sessionStorage.setItem("target", `/posts/read/${id}`);
+        location.href="/users/login";
+    });
+
+    $("#btn-insert").on("click", async function(){
+        const text=$("#text").val();
+        if(text=="") {
+            alert("댓글 내용을 입력하세요!");
+            $("#text").focus();
+        }else{
+            const email=sessionStorage.getItem("email");
+            const date=moment(new Date()).format("YYYY-MM-DD HH:mm:ss");
+            await addDoc(collection(db, "comments"), {
+                pid: id,
+                email:email, 
+                text:text, 
+                date:date
+            });
+            $("#text").val("");
+            getComments();
+        }
+    });
+
+    $("#div_comments").on("click", ".comment", function(){
+        $(this).toggleClass("ellipsis2");
+    });
+
+    $("#div_comments").on("click", ".btn-delete",async function(){
+        const id=$(this).attr("id");
+        if(confirm(`${id}번 문서를 삭제하실래요?`)){
+            await deleteDoc(doc(db, `comments/${id}`));
+            getComments();
+        }
+    });
+
+    //수정버튼을 클릭한 경우
+    $("#div_comments").on("click", ".btn-update", function(){
+        const row=$(this).parent().parent().parent();
+        const index=row.attr("index");
+        row.find(".view"+index).hide();
+        row.find(".edit"+index).show();
+    });
+
+    //취소버튼을 클릭한 경우
+    $("#div_comments").on("click", ".btn-cancel", function(){
+        const row=$(this).parent().parent().parent();
+        const index=row.attr("index");
+        row.find(".view"+index).show();
+        row.find(".edit"+index).hide();
+    });
+
+    //저장버튼을 클릭한 경우
+    $("#div_comments").on("click", ".btn-save", async function(){
+        const row=$(this).parent().parent().parent();
+        const id=$(this).attr("id");
+        const snapshot = await getDoc(doc(db, `comments/${id}`));
+        const comment=snapshot.data();
+        const text=row.find(".text").val();
+        if(confirm("댓글 내용을 수정하실래요?")){
+             await setDoc(doc(db, `comments/${id}`), {...comment, text});
+             alert("댓글 내용이 수정되었습니다!");
+             getComments();
+        }
+        
+    });
+</script>

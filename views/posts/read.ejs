@@ -1,0 +1,45 @@
+<div class="my-5">
+    <h1 class="text-center mb-5">게시글정보</h1>
+    <div id="div_update" class="text-end" style="display:none;">
+        <button id="btn-update" class="btn btn-primary btn-sm mb-3">수정</button>
+        <button id="btn-delete" class="btn btn-danger btn-sm mb-3">삭제</button>
+    </div>
+    <div id="div_post"></div>
+    <%-include("comments.ejs")%>
+</div>
+<script id="temp_post" type="x-handlebars-templates">
+    <div class="card p-3">
+        <h5>{{title}}</h5>
+        <div>작성자:{{email}}</div>
+        <div>작성일:{{date}}</div>
+        <hr>
+        <div>{{body}}</div>
+    </div>    
+</script>
+<script type="module">
+    import { app } from "/javascripts/firebaseInit.js";
+    import { getFirestore } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    import { doc, getDoc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.4.0/firebase-firestore.js";
+    const db = getFirestore(app);
+
+    const id="<%=id%>"
+    const snapshot = await getDoc(doc(db, `posts/${id}`));
+    const post=snapshot.data();
+    const temp=Handlebars.compile($("#temp_post").html());
+    $("#div_post").html(temp(post));
+
+    if(sessionStorage.getItem("email")==post.email) {
+        $("#div_update").toggle();
+    }
+
+    $("#btn-delete").on("click", async function() {
+        if(confirm("해당 게시글을 삭제하실래요?")) {
+            await deleteDoc(doc(db, `posts/${id}`));
+            location.href="/posts";
+        }
+    });
+
+    $("#btn-update").on("click", function(req, res){
+        location.href="/posts/update/" + id;
+    })
+</script>

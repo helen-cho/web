@@ -19,7 +19,7 @@
     <table class="table">
     {{#each .}}
         <tr>
-            <td>{{title}}</td>
+            <td><a href="/posts/read/{{id}}">{{index}} {{title}}</a></td>
             <td>{{email}}</td>
             <td>{{date}}</td>
         </tr>    
@@ -47,13 +47,12 @@
         let total=snapshot.docs.length;
         last = Math.ceil(total/size);
         $("#total").html(total);
-        
         await snapshot.docs.forEach(async(row, index)=>{
             //console.log(row.id, row.data());
             const start = (page-1)*size;
             const end = (page*size)-1;
             if(index>=start && index<=end){
-                rows.push({id:row.id, ...row.data()});
+                rows.push({index:index+1, id:row.id, ...row.data()});
             }
         });
         //console.log(rows);
@@ -91,7 +90,6 @@
         getPosts();
     });
 
-    
     $("#btn-prev").on("click", function(){
         page--;
         getPosts();
